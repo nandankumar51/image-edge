@@ -1,12 +1,372 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Edge Viewer</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edge Detection Viewer - Web Debug Tool</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      color: #fff;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      width: 100%;
+    }
+
+    header {
+      text-align: center;
+      padding: 30px 0;
+      background: rgba(0, 0, 0, 0.3);
+      margin-bottom: 30px;
+      border-radius: 10px;
+    }
+
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    .subtitle {
+      font-size: 1.1em;
+      opacity: 0.9;
+    }
+
+    .main-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .card h2 {
+      margin-bottom: 15px;
+      font-size: 1.5em;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+      padding-bottom: 10px;
+    }
+
+    #frameCanvas {
+      width: 100%;
+      height: auto;
+      border-radius: 10px;
+      background: #000;
+      display: block;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+    }
+
+    .stat-item {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 0.9em;
+      opacity: 0.8;
+      margin-bottom: 5px;
+    }
+
+    .stat-value {
+      font-size: 1.8em;
+      font-weight: bold;
+      color: #4CAF50;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      flex: 1;
+      min-width: 120px;
+      padding: 12px 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1em;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    .file-label {
+      flex: 1;
+      min-width: 120px;
+      padding: 12px 20px;
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1em;
+      text-align: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .file-label:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .log {
+      background: rgba(0, 0, 0, 0.5);
+      padding: 15px;
+      border-radius: 10px;
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9em;
+    }
+
+    .log-entry {
+      margin-bottom: 5px;
+      padding: 5px;
+      border-left: 3px solid #4CAF50;
+      padding-left: 10px;
+    }
+
+    .log-entry.error {
+      border-left-color: #f44336;
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      margin-top: auto;
+      opacity: 0.7;
+    }
+
+    @media (max-width: 768px) {
+      .main-content {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 <body>
-  <canvas id="viewer"></canvas>
-  <script src="main.js"></script>
+  <div class="container">
+    <header>
+      <h1>🎨 Edge Detection Viewer</h1>
+      <p class="subtitle">Web-Based Debug Tool for OpenCV Processing</p>
+    </header>
+
+    <div class="main-content">
+      <div class="card">
+        <h2>📸 Frame Display</h2>
+        <canvas id="frameCanvas" width="640" height="480"></canvas>
+        <div class="controls">
+          <label for="fileInput" class="file-label">Upload Image</label>
+          <input type="file" id="fileInput" class="file-input" accept="image/*">
+          <button id="loadSampleBtn">Load Sample</button>
+          <button id="clearBtn">Clear</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>📊 Statistics</h2>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-label">FPS</div>
+            <div class="stat-value" id="fpsValue">15.0</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">Processing Time</div>
+            <div class="stat-value" id="processingTime">12.5<span style="font-size: 0.5em;">ms</span></div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">Resolution</div>
+            <div class="stat-value" id="resolution">640x480</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">Mode</div>
+            <div class="stat-value" id="mode">Edges</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📝 Activity Log</h2>
+      <div class="log" id="logContainer">
+        <div class="log-entry">System initialized</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>Edge Detection Viewer v1.0 | Android + OpenCV + OpenGL Assessment</p>
+  </footer>
+
+  <script>
+    class FrameViewer {
+      constructor() {
+        this.canvas = document.getElementById('frameCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.fpsElement = document.getElementById('fpsValue');
+        this.processingTimeElement = document.getElementById('processingTime');
+        this.resolutionElement = document.getElementById('resolution');
+        this.modeElement = document.getElementById('mode');
+        this.logContainer = document.getElementById('logContainer');
+                
+        this.setupEventListeners();
+        this.log('Frame viewer ready');
+      }
+
+      setupEventListeners() {
+        document.getElementById('fileInput').addEventListener('change', (e) => {
+          this.loadImageFromFile(e.target.files[0]);
+        });
+
+        document.getElementById('loadSampleBtn').addEventListener('click', () => {
+          this.loadSampleFrame();
+        });
+
+        document.getElementById('clearBtn').addEventListener('click', () => {
+          this.clearCanvas();
+        });
+      }
+
+      loadImageFromFile(file) {
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            this.displayImage(img);
+            this.updateStats(img.width, img.height);
+            this.log(`Loaded image: ${file.name} (${img.width}x${img.height})`);
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+
+      loadSampleFrame() {
+        this.log('Generating sample edge-detected frame...');
+                
+        this.ctx.fillStyle = '#000';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+        this.ctx.strokeStyle = '#fff';
+        this.ctx.lineWidth = 2;
+                
+        for (let i = 0; i < 50; i++) {
+          this.ctx.beginPath();
+          const x1 = Math.random() * this.canvas.width;
+          const y1 = Math.random() * this.canvas.height;
+          const x2 = x1 + (Math.random() - 0.5) * 100;
+          const y2 = y1 + (Math.random() - 0.5) * 100;
+                    
+          this.ctx.moveTo(x1, y1);
+          this.ctx.lineTo(x2, y2);
+          this.ctx.stroke();
+        }
+                
+        const fps = (Math.random() * 5 + 12).toFixed(1);
+        const procTime = (Math.random() * 10 + 8).toFixed(1);
+                
+        this.fpsElement.textContent = fps;
+        this.processingTimeElement.innerHTML = `${procTime}<span style="font-size: 0.5em;">ms</span>`;
+                
+        this.log(`Sample frame generated (FPS: ${fps}, Processing: ${procTime}ms)`);
+      }
+
+      displayImage(img) {
+        // Fit image into canvas while preserving aspect ratio
+        const canvas = this.canvas;
+        const ctx = this.ctx;
+        const cw = canvas.width;
+        const ch = canvas.height;
+        const iw = img.width;
+        const ih = img.height;
+
+        const scale = Math.min(cw / iw, ch / ih);
+        const dw = Math.round(iw * scale);
+        const dh = Math.round(ih * scale);
+        const dx = Math.round((cw - dw) / 2);
+        const dy = Math.round((ch - dh) / 2);
+
+        ctx.clearRect(0, 0, cw, ch);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, cw, ch);
+        ctx.drawImage(img, 0, 0, iw, ih, dx, dy, dw, dh);
+
+        this.updateStats(iw, ih);
+      }
+
+      updateStats(width, height) {
+        this.resolutionElement.textContent = `${width}x${height}`;
+      }
+
+      clearCanvas() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.log('Canvas cleared');
+      }
+
+      log(message, isError = false) {
+        const entry = document.createElement('div');
+        entry.className = 'log-entry' + (isError ? ' error' : '');
+        entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+        this.logContainer.prepend(entry);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const viewer = new FrameViewer();
+      // Make file label click open file input
+      const fileLabel = document.querySelector('.file-label');
+      const fileInput = document.getElementById('fileInput');
+      fileLabel.addEventListener('click', () => fileInput.click());
+    });
+  </script>
 </body>
 </html>
