@@ -105,7 +105,7 @@ class CameraManager(
                     }
                     
                     override fun onConfigureFailed(session: CameraCaptureSession) {
-                        Log.e(TAG, "Capture session configuration failed")
+                        Log.e(TAG, "Failed to configure capture session")
                     }
                 },
                 backgroundHandler
@@ -114,26 +114,22 @@ class CameraManager(
             Log.e(TAG, "Failed to create capture session", e)
         }
     }
-
+    
     fun closeCamera() {
-        try {
-            captureSession?.close()
-            captureSession = null
-            cameraDevice?.close()
-            cameraDevice = null
-            imageReader?.close()
-            imageReader = null
-        } catch (e: Exception) {
-            Log.e(TAG, "Error closing camera", e)
-        }
+        captureSession?.close()
+        captureSession = null
+        
+        cameraDevice?.close()
+        cameraDevice = null
+        
+        imageReader?.close()
+        imageReader = null
+        
+        Log.i(TAG, "Camera closed")
     }
-
-    fun stopBackgroundThread() {
-        try {
-            backgroundThread.quitSafely()
-            backgroundThread.join()
-        } catch (e: InterruptedException) {
-            Log.e(TAG, "Error stopping background thread", e)
-        }
+    
+    fun release() {
+        closeCamera()
+        backgroundThread.quitSafely()
     }
 }
